@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Entities\WeekDay;
 use App\Enums\ReservationStatus;
 use App\Models\User;
+use App\Repositories\ReservationRepository;
 use App\Services\HolidayService;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -23,21 +25,14 @@ class ReserveController extends Controller
 
     public function list(Request $request)
     {
-        // $user = $request->user()->only(['name', 'debt']);
-        $user = User::where('id', '=', 1)
-            ->first()
-            ->only(['name', 'debt']);
-
-        $firstDayOfCurrentWeek = $this->getFirstDayOfCurrentWeek();
-        $firstDayOfNextWeek = $this->getFirstDayOfCurrentWeek()->addDays(7);
-
+        $user = $request->user()->only(['name', 'debt']);
 
         return [
             'active_tab' => $this->getActiveTab(),
             'user' => $user,
 
-            'current' => $this->createWeekList($firstDayOfCurrentWeek),
-            'next' => []
+            'current' => $this->createCurrentWeekList(),
+            'next' => $this->createNextWeekList()
         ];
     }
 
@@ -69,12 +64,43 @@ class ReserveController extends Controller
 
     private function createCurrentWeekList()
     {
+        $currentWeek = $this->createWeekList($this->getFirstDayOfCurrentWeek());
+        /**
+         * @var WeekDay $dayObj
+         */
+        foreach ($currentWeek as $dayObj) {
+            $date = $dayObj->getDate();
+            if(ReservationRepository::isReservedByUser(\request()->user()->id, $date)){
+                $dayObj->setStatus(ReservationStatus::RESERVED_BY_ME);
+            }
+            else if ( Carbon::parse($date)->isPast()){
+                $dayObj->setStatus(ReservationStatus::PASSED);
+            }
+            else if (ReservationRepository::getRemainingParkingCapacity($date) == 0){
+                $dayObj->setStatus(ReservationStatus::RESERVED_NOT_BIDABLE);
+            }
+        }
 
+        return $currentWeek;
     }
 
     private function createNextWeekList()
     {
+        $nextWeek = $this->createWeekList($this->getFirstDayOfCurrentWeek()->addWeek());
+        /**
+         * @var WeekDay $dayObj
+         */
+        foreach ($nextWeek as $dayObj) {
+            $date = $dayObj->getDate();
+            if(ReservationRepository::isReservedByUser(\request()->user()->id, $date)){
+                $dayObj->setStatus(ReservationStatus::RESERVED_BY_ME);
+            }
+            else if (ReservationRepository::getRemainingParkingCapacity($date) == 0){
+                $dayObj->setStatus(ReservationStatus::RESERVED_BUT_BIDABLE);
+            }
+        }
 
+        return $nextWeek;
     }
 
     private function getFirstDayOfCurrentWeek(): \Illuminate\Support\Carbon

@@ -14,6 +14,13 @@ class ReservationRepository
         return env('LIMIT_PARKING') - $count;
     }
 
+    public static function isReservedByUser(int $userId, string $date)
+    {
+        return Reservation::where('user_id', '=', $userId)
+            ->where('reserve_date', '=', $date)
+            ->exist();
+    }
+
     public static function kickSomeoneOut($date, $price, $addedUserId): void
     {
         $reserved = Reservation::query()->where('reserve_date', '=', $date)
