@@ -18,6 +18,5 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::get('test', function() {
-    $sms = new \Utils\KavenegarApi("", true);
-});
+Route::post('/auth/request', [\App\Http\Controllers\AuthController::class, 'request']);
+Route::post('/auth/verify', [\App\Http\Controllers\AuthController::class, 'verify']);
