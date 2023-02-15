@@ -68,7 +68,7 @@ class ReserveController extends Controller
         /**
          * @var WeekDay $dayObj
          */
-        foreach ($currentWeek as $dayObj) {
+        foreach ($currentWeek as $index => $dayObj) {
             $date = $dayObj->getDate();
             if(ReservationRepository::isReservedByUser(\request()->user()->id, $date)){
                 $dayObj->setStatus(ReservationStatus::RESERVED_BY_ME);
@@ -79,6 +79,7 @@ class ReserveController extends Controller
             else if (ReservationRepository::getRemainingParkingCapacity($date) == 0){
                 $dayObj->setStatus(ReservationStatus::RESERVED_NOT_BIDABLE);
             }
+            $currentWeek[$index] = $dayObj->toArray();
         }
 
         return $currentWeek;
@@ -90,7 +91,7 @@ class ReserveController extends Controller
         /**
          * @var WeekDay $dayObj
          */
-        foreach ($nextWeek as $dayObj) {
+        foreach ($nextWeek as $index => $dayObj) {
             $date = $dayObj->getDate();
             if(ReservationRepository::isReservedByUser(\request()->user()->id, $date)){
                 $dayObj->setStatus(ReservationStatus::RESERVED_BY_ME);
@@ -98,6 +99,7 @@ class ReserveController extends Controller
             else if (ReservationRepository::getRemainingParkingCapacity($date) == 0){
                 $dayObj->setStatus(ReservationStatus::RESERVED_BUT_BIDABLE);
             }
+            $nextWeek[$index] = $dayObj->toArray();
         }
 
         return $nextWeek;
