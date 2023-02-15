@@ -130,6 +130,10 @@ class ReserveController extends Controller
         if (ReservationRepository::getRemainingParkingCapacity($date) != 0) {
             $result = ReservationRepository::reserve($date, $price, $userId);
         } else {
+            $dateTimestamp = strtotime($date);
+            if ($dateTimestamp - time() < 7 * 24 * 3600) {
+                return response()->base(false, 'No capacity');
+            }
             $result = ReservationRepository::kickSomeoneOut($date, $price, $userId,$sms);
             if (!$result) {
                 $message = 'رزرو نشد قیمت کشید بالا';
