@@ -20,8 +20,8 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::get('/info', [ReserveController::class, 'list']);
 Route::post('/auth/request', [AuthController::class, 'request']);
 Route::post('/auth/verify', [AuthController::class, 'verify']);
 Route::post('/auth/logout', [AuthController::class, 'logout']);
-Route::post('/reserve',[\App\Http\Controllers\ReserveController::class, 'reserve']);
+Route::get('/info', [ReserveController::class, 'list'])->middleware(['auth:sanctum']);
+Route::post('/reserve',[ReserveController::class, 'reserve'])->middleware(['auth:sanctum']);

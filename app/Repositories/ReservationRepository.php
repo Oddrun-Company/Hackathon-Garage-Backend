@@ -18,7 +18,7 @@ class ReservationRepository
     {
         return Reservation::where('user_id', '=', $userId)
             ->where('reserve_date', '=', $date)
-            ->exist();
+            ->exists();
     }
 
     public static function kickSomeoneOut($date, $price, $addedUserId,$sms): bool
@@ -51,7 +51,9 @@ class ReservationRepository
             'reserve_date' => $date,
             'price' => $price
         ]);
-
+        $debt = User::where('id', '=', $userId)->first()->debt;
+        $newDept = $debt - $price;
+        User::where('id', $userId)->update(['debt' => $newDept]);
         return $result;
     }
 
