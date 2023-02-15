@@ -39,7 +39,8 @@ class ReserveController extends Controller
         ];
     }
 
-    private function getActiveTab () {
+    private function getActiveTab()
+    {
         $date = today();
         if ($date->isFriday() || $date->isThursday()) {
             return 'next';
@@ -56,7 +57,7 @@ class ReserveController extends Controller
             $list[] = (new WeekDay(
                 $date->toDateString(),
                 $this->translateDayName($date->dayName),
-                $isHoliday ? null : (int) env('MINIMUM_RESERVE_PRICE'),
+                $isHoliday ? null : (int)env('MINIMUM_RESERVE_PRICE'),
                 $isHoliday ? ReservationStatus::HOLIDAY : ReservationStatus::AVAILABLE
             ));
             $date->addDay();
@@ -73,15 +74,13 @@ class ReserveController extends Controller
          */
         foreach ($currentWeek as $index => $dayObj) {
             $date = $dayObj->getDate();
-            if(ReservationRepository::isReservedByUser(\request()->user()->id, $date)){
+            if (ReservationRepository::isReservedByUser(\request()->user()->id, $date)) {
                 $dayObj->setPrice(null);
                 $dayObj->setStatus(ReservationStatus::RESERVED_BY_ME);
-            }
-            else if ( Carbon::parse($date)->isPast()){
+            } else if (Carbon::parse($date)->isPast()) {
                 $dayObj->setPrice(null);
                 $dayObj->setStatus(ReservationStatus::PASSED);
-            }
-            else if (ReservationRepository::getRemainingParkingCapacity($date) == 0){
+            } else if (ReservationRepository::getRemainingParkingCapacity($date) == 0) {
                 $dayObj->setPrice(null);
                 $dayObj->setStatus(ReservationStatus::RESERVED_NOT_BIDABLE);
             }
@@ -99,12 +98,11 @@ class ReserveController extends Controller
          */
         foreach ($nextWeek as $index => $dayObj) {
             $date = $dayObj->getDate();
-            if(ReservationRepository::isReservedByUser(\request()->user()->id, $date)){
+            if (ReservationRepository::isReservedByUser(\request()->user()->id, $date)) {
                 $dayObj->setPrice(null);
                 $dayObj->setStatus(ReservationStatus::RESERVED_BY_ME);
-            }
-            else if (ReservationRepository::getRemainingParkingCapacity($date) == 0){
-                $dayObj->setPrice($dayObj->getPrice() + (int) env("MINIMUM_RESERVE_PRICE_STEP"));
+            } else if (ReservationRepository::getRemainingParkingCapacity($date) == 0) {
+                $dayObj->setPrice($dayObj->getPrice() + (int)env("MINIMUM_RESERVE_PRICE_STEP"));
                 $dayObj->setStatus(ReservationStatus::RESERVED_BUT_BIDABLE);
             }
             $nextWeek[$index] = $dayObj->toArray();
@@ -123,30 +121,22 @@ class ReserveController extends Controller
         return $this->trans[$name];
     }
 
-    public function reserve(Request $request,SmsService $sms): JsonResponse
+    public function reserve(Request $request, SmsService $sms): JsonResponse
     {
-        $result = true;
         $message = 'رزرو شد برو حالشو ببر.';
         $date = $request->get('date');
         $price = $request->get('price');
-        $result = ReservationRepository::kickSomeoneOut($date, $price, 4,$sms);
-        if (!$result) {
-            $message = 'رزرو نشد قیمت کشید بالا';
+        $userId = $request->user()->id;
+        if (ReservationRepository::getRemainingParkingCapacity($date) != 0) {
+            $result = ReservationRepository::reserve($date, $price, $userId);
+        } else {
+            $result = ReservationRepository::kickSomeoneOut($date, $price, $userId,$sms);
+            if (!$result) {
+                $message = 'رزرو نشد قیمت کشید بالا';
+            }
+
         }
-
-//        if (ReservationRepository::getRemainingParkingCapacity($date) != 0) {
-//            $userId = User::find(1)->id;
-//            $result = ReservationRepository::reserve($date, $price, 4);
-//        } else {
-//            try {
-//                $result = ReservationRepository::kickSomeoneOut($date, $price, 4);
-//            } catch (ValidationException $e) {
-//                $result = false;
-//                $message = $e->getMessage();
-//            }
-//        }
         return response()->base($result, null, $message);
-
 
 
     }
