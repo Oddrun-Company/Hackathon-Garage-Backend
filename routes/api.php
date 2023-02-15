@@ -23,4 +23,5 @@ Route::get('test', function() {
     $sms = new \Utils\KavenegarApi("", true);
 });
 
+Route::get('info', [ReserveController::class, 'list']);
 Route::post('reserves', [ReserveController::class, 'insert']);
