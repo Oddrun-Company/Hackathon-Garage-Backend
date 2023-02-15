@@ -38,7 +38,7 @@ class AuthController extends Controller
         $otp = Cache::get(self::CODE_CACHE_PREFIX . $phone);
         Cache::forget(self::CODE_CACHE_PREFIX . $phone);
         if(!is_null($code) && $otp != $code) {
-            abort(403, 'invalid code');
+            return response()->base(false, 'invalid code');
         }
         // retrieve use and generate token
         $user = User::query()->where('phone_number', $phone)->first();
