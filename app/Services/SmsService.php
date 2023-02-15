@@ -24,4 +24,9 @@ class SmsService
     {
         $this->send($phone, trans('messages.sms.otp', ['code' => $code]));
     }
+
+//    public function reservation (int $phone): void
+//    {
+//        $this->send($phone, trans('messages.sms.reservation'));
+//    }
 }

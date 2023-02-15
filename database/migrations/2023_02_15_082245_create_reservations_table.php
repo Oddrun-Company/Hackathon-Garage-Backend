@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained('users');
             $table->foreignId('deleted_by')->nullable()->constrained('users');
-            $table->timestamp('reserve_date');
+            $table->date('reserve_date');
             $table->integer('price');
             $table->softDeletes();
             $table->timestamps();
