@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -18,6 +19,5 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::get('test', function() {
-    $sms = new \Utils\KavenegarApi("", true);
-});
+Route::get('/auth/request', [AuthController::class, 'request']);
+Route::get('/auth/verify', [AuthController::class, 'verify']);
