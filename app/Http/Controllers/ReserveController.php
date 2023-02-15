@@ -131,14 +131,18 @@ class ReserveController extends Controller
             $result = ReservationRepository::reserve($date, $price, $userId);
         } else {
             $dateTimestamp = strtotime($date);
-            if ($dateTimestamp - time() < 7 * 24 * 3600) {
-                return response()->base(false, 'No capacity');
-            }
-            $result = ReservationRepository::kickSomeoneOut($date, $price, $userId,$sms);
-            if (!$result) {
-                $message = 'رزرو نشد قیمت کشید بالا';
-            }
 
+            $now = Carbon::now();
+            $weekEndDate = $now->endOfWeek()->timestamp;
+            if ($dateTimestamp < $weekEndDate) {
+                $result = false;
+                $message = 'این هفته دیگه رزروه';
+            } else {
+                $result = ReservationRepository::kickSomeoneOut($date, $price, $userId, $sms);
+                if (!$result) {
+                    $message = 'رزرو نشد قیمت کشید بالا';
+                }
+            }
         }
         return response()->base($result, null, $message);
 

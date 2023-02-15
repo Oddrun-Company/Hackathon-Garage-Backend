@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use Carbon\Carbon;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Response;
 
@@ -26,6 +27,10 @@ class AppServiceProvider extends ServiceProvider
                 'message' => $message,
                 'data' => $data
             ]);
+        });
+
+        Carbon::macro('isDayOff', function ($date) {
+            return $date->isFriday();
         });
     }
 }
