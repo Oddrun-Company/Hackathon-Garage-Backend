@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('phone_number')->unique();
             $table->integer('debt');
+            $table->integer('confirmation_code')->unique()->nullable();
             $table->timestamps();
         });
     }
