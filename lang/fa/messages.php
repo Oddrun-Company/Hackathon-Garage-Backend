@@ -3,7 +3,8 @@
 return [
     'sms' => [
         'otp' => 'کد ورود به گاراژ: :code',
-        'bidLastCall' => ':remaining_time مانده تا اتمام زمان رزرو پارکینگ'
+        'bidLastCall' => ':remaining_time مانده تا اتمام زمان رزرو پارکینگ',
+        'reservedCancel'=>'پارکینگی که رزرو کرده بودی پرید'
     ],
     'times' => [
         'year' => 'سال',

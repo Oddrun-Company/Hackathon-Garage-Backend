@@ -8,6 +8,7 @@ use App\Models\Reservation;
 use App\Models\User;
 use App\Repositories\ReservationRepository;
 use App\Services\HolidayService;
+use App\Services\SmsService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -122,14 +123,13 @@ class ReserveController extends Controller
         return $this->trans[$name];
     }
 
-    public function reserve(Request $request): JsonResponse
+    public function reserve(Request $request,SmsService $sms): JsonResponse
     {
         $result = true;
         $message = 'رزرو شد برو حالشو ببر.';
         $date = $request->get('date');
         $price = $request->get('price');
-
-        $result = ReservationRepository::kickSomeoneOut($date, $price, 4);
+        $result = ReservationRepository::kickSomeoneOut($date, $price, 4,$sms);
         if (!$result) {
             $message = 'رزرو نشد قیمت کشید بالا';
         }
