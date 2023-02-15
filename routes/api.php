@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ReserveController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -18,5 +20,6 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::post('/auth/request', [\App\Http\Controllers\AuthController::class, 'request']);
-Route::post('/auth/verify', [\App\Http\Controllers\AuthController::class, 'verify']);
+Route::get('/info', [ReserveController::class, 'list']);
+Route::post('/auth/request', [AuthController::class, 'request']);
+Route::post('/auth/verify', [AuthController::class, 'verify']);
