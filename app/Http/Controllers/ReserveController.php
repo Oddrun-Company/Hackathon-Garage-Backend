@@ -55,7 +55,7 @@ class ReserveController extends Controller
             $list[] = (new WeekDay(
                 $date->toDateString(),
                 $this->translateDayName($date->dayName),
-                env('MINIMUM_RESERVE_PRICE'),
+                $isHoliday ? null : (int) env('MINIMUM_RESERVE_PRICE'),
                 $isHoliday ? ReservationStatus::HOLIDAY : ReservationStatus::AVAILABLE
             ));
             $date->addDay();
@@ -73,12 +73,15 @@ class ReserveController extends Controller
         foreach ($currentWeek as $index => $dayObj) {
             $date = $dayObj->getDate();
             if(ReservationRepository::isReservedByUser(\request()->user()->id, $date)){
+                $dayObj->setPrice(null);
                 $dayObj->setStatus(ReservationStatus::RESERVED_BY_ME);
             }
             else if ( Carbon::parse($date)->isPast()){
+                $dayObj->setPrice(null);
                 $dayObj->setStatus(ReservationStatus::PASSED);
             }
             else if (ReservationRepository::getRemainingParkingCapacity($date) == 0){
+                $dayObj->setPrice(null);
                 $dayObj->setStatus(ReservationStatus::RESERVED_NOT_BIDABLE);
             }
             $currentWeek[$index] = $dayObj->toArray();
@@ -96,9 +99,11 @@ class ReserveController extends Controller
         foreach ($nextWeek as $index => $dayObj) {
             $date = $dayObj->getDate();
             if(ReservationRepository::isReservedByUser(\request()->user()->id, $date)){
+                $dayObj->setPrice(null);
                 $dayObj->setStatus(ReservationStatus::RESERVED_BY_ME);
             }
             else if (ReservationRepository::getRemainingParkingCapacity($date) == 0){
+                $dayObj->setPrice($dayObj->getPrice() + (int) env("MINIMUM_RESERVE_PRICE_STEP"));
                 $dayObj->setStatus(ReservationStatus::RESERVED_BUT_BIDABLE);
             }
             $nextWeek[$index] = $dayObj->toArray();
