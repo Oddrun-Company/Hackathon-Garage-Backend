@@ -4,15 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Entities\WeekDay;
 use App\Enums\ReservationStatus;
-use App\Models\Reservation;
-use App\Models\User;
+use App\Exceptions\ReserveNotAccepted;
 use App\Repositories\ReservationRepository;
 use App\Services\HolidayService;
 use App\Services\SmsService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
 
 class ReserveController extends Controller
 {
@@ -67,12 +65,12 @@ class ReserveController extends Controller
             if (ReservationRepository::isReservedByUser(\request()->user()->id, $date)) {
                 $dayObj->setPrice(null);
                 $dayObj->setStatus(ReservationStatus::RESERVED_BY_ME);
-            } else if (Carbon::parse($date)->isPast()) {
+            } else if (Carbon::parse($date)->addDay()->isPast()) {
                 $dayObj->setPrice(null);
                 $dayObj->setStatus(ReservationStatus::PASSED);
             } else if (ReservationRepository::getRemainingParkingCapacity($date) == 0) {
                 $dayObj->setPrice(null);
-                $dayObj->setStatus(ReservationStatus::RESERVED_NOT_BIDABLE);
+                $dayObj->setStatus(ReservationStatus::FULL_NOT_BIDABLE);
             }
             $currentWeek[$index] = $dayObj->toArray();
         }
@@ -93,7 +91,7 @@ class ReserveController extends Controller
                 $dayObj->setStatus(ReservationStatus::RESERVED_BY_ME);
             } else if (ReservationRepository::getRemainingParkingCapacity($date) == 0) {
                 $dayObj->setPrice($dayObj->getPrice() + (int)env("MINIMUM_RESERVE_PRICE_STEP"));
-                $dayObj->setStatus(ReservationStatus::RESERVED_BUT_BIDABLE);
+                $dayObj->setStatus(ReservationStatus::FULL_BUT_BIDABLE);
             }
             $nextWeek[$index] = $dayObj->toArray();
         }
@@ -108,36 +106,44 @@ class ReserveController extends Controller
 
     public function reserve(Request $request, SmsService $sms): JsonResponse
     {
-        $message = 'رزرو شد برو حالشو ببر.';
+        $message = trans("messages.success.reserved");
         $date = $request->get('date');
         $price = $request->get('price');
         $userId = $request->user()->id;
-        if(ReservationRepository::isReservedByUser($userId, $date)) {
+
+        if ($price % env("MINIMUM_RESERVE_PRICE_STEP") != 0) {
+            $message = trans("messages.errors.bad_bid_price");
             $result = false;
-            $message = 'قبلا این روز رو رزرو کردی';
+        }
+        else if(ReservationRepository::isReservedByUser($userId, $date)) {
+            $result = false;
+            $message = trans("messages.errors.already_reserved");
         } else {
             if (ReservationRepository::getRemainingParkingCapacity($date) != 0) {
+                $price = env("MINIMUM_RESERVE_PRICE");
                 $result = ReservationRepository::reserve($date, $price, $userId);
             } else {
                 $dateTimestamp = strtotime($date);
 
                 $now = Carbon::now();
-                $weekEndDate = $now->endOfWeek()->timestamp;
+                $weekEndDate = $now->endOfWeek()->subDays(2)->timestamp;
                 if ($dateTimestamp < $weekEndDate) {
                     $result = false;
-                    $message = 'این هفته دیگه رزروه';
-                } else {
-                    $result = ReservationRepository::kickSomeoneOut($date, $price, $userId, $sms);
-                    if (!$result) {
-                        $message = 'رزرو نشد قیمت کشید بالا';
+                    $message = trans("messages.errors.parking_is_full");
+                }
+                else {
+                    try {
+                        $result = ReservationRepository::kickSomeoneOut($date, $price, $userId, $sms);
+                    }
+                    catch (ReserveNotAccepted $e) {
+                        $result = false;
+                        $message = $e->getMessage();
                     }
                 }
             }
         }
 
         return response()->base($result, null, $message);
-
-
     }
 
 

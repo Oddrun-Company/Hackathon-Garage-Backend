@@ -2,6 +2,7 @@
 
 namespace App\Repositories;
 
+use App\Exceptions\ReserveNotAccepted;
 use App\Models\Reservation;
 use App\Models\User;
 use Morilog\Jalali\Jalalian;
@@ -24,15 +25,15 @@ class ReservationRepository
 
     public static function kickSomeoneOut($date, $price, $addedUserId, $smsService): bool
     {
-        $firstActiveReserve = Reservation::query()->where('reserve_date', '=', $date)
-            ->orderBy('price')
-            ->first();
+        $minimumPrice = Reservation::query()->where('reserve_date', '=', $date)
+            ->min('price');
         $randomReserve = Reservation::where('reserve_date', '=', $date)
-            ->wherePrice($firstActiveReserve->price)
+            ->wherePrice($minimumPrice)
             ->inRandomOrder()
             ->first();
-        if ($price <= $randomReserve->price || $price < $randomReserve->price + env("MINIMUM_RESERVE_PRICE_STEP")) {
-            return false;
+        $minStep = env("MINIMUM_RESERVE_PRICE_STEP");
+        if ($price <= $randomReserve->price || $price < $randomReserve->price + $minStep) {
+            throw new ReserveNotAccepted(trans("messages.errors.minimum_bid_price_raised"));
         }
         $randomReserve->deleted_by = $addedUserId;
         $randomReserve->save();
@@ -45,7 +46,7 @@ class ReservationRepository
         $prevUser->save();
 
         $smsService->send($prevUser->phone_number, trans('messages.sms.reservedCancel', [
-            "date" => Jalalian::fromFormat('Y-m-d', $date)->format('%A %d %B')
+            "date" => Jalalian::forge(strtotime($date))->format('%A %d %B')
         ]));
 
         return true;
