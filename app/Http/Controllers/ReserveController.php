@@ -124,10 +124,15 @@ class ReserveController extends Controller
                 $result = ReservationRepository::reserve($date, $price, $userId);
             } else {
                 $dateTimestamp = strtotime($date);
-
                 $now = Carbon::now();
                 $weekEndDate = $now->endOfWeek()->subDays(2)->timestamp;
-                if ($dateTimestamp < $weekEndDate) {
+                $start = env("BID_DEADLINE_TIME");
+                $time  = Carbon::now()->format("H:i");
+                if (today()->isFriday() && $time >= $start) {
+                    $result = false;
+                    $message = trans("messages.errors.deadline_passed");
+                }
+                elseif ($dateTimestamp < $weekEndDate) {
                     $result = false;
                     $message = trans("messages.errors.parking_is_full");
                 }

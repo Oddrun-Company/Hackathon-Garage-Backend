@@ -5,6 +5,7 @@ return [
         'reserved' => "رزرو شد برو حالشو ببر مهندس!"
     ],
     'errors' => [
+        "deadline_passed"=>"وقتش گذشته مهندس!",
         "already_reserved" => "قبلا رزرو کردی که مهندس!",
         "parking_is_full" => "جا نداریم مهندس!",
         "minimum_bid_price_raised" => "قیمت کشید بالا! رفرش کن مهندس.",
