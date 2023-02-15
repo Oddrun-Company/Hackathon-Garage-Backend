@@ -37,7 +37,7 @@ class AuthController extends Controller
         $phone = $request->get('phone');
         $otp = Cache::get(self::CODE_CACHE_PREFIX . $phone);
         Cache::forget(self::CODE_CACHE_PREFIX . $phone);
-        if(!is_null($code) && $otp != $code) {
+        if (!is_null($code) && $otp != $code) {
             return response()->base(false, 'invalid code');
         }
         // retrieve use and generate token
@@ -46,5 +46,12 @@ class AuthController extends Controller
             'user' => new UserResource($user),
             'token' => $user->createToken(env('APP_KEY'))->plainTextToken
         ]);
+    }
+
+    public function logout(Request $request)
+    {
+        $user = $request->user();
+        $user->currentAccessToken()->delete();
+        return response()->base();
     }
 }

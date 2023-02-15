@@ -23,4 +23,5 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::get('/info', [ReserveController::class, 'list']);
 Route::post('/auth/request', [AuthController::class, 'request']);
 Route::post('/auth/verify', [AuthController::class, 'verify']);
+Route::post('/auth/logout', [AuthController::class, 'logout']);
 Route::post('/reserve',[\App\Http\Controllers\ReserveController::class, 'reserve']);
