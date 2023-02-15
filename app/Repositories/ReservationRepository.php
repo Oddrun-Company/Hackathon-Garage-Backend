@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use App\Models\Reservation;
 use App\Models\User;
+use Morilog\Jalali\Jalalian;
 
 class ReservationRepository
 {
@@ -43,7 +44,9 @@ class ReservationRepository
         $prevUser->debt += $randomReserve->price;
         $prevUser->save();
 
-        $smsService->send($prevUser->phone_number, trans('messages.sms.reservedCancel'));
+        $smsService->send($prevUser->phone_number, trans('messages.sms.reservedCancel', [
+            "date" => Jalalian::fromFormat('Y-m-d', $date)->format('%A %d %B')
+        ]));
 
         return true;
     }
