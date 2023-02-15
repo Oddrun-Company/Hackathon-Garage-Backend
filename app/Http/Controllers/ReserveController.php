@@ -112,23 +112,29 @@ class ReserveController extends Controller
         $date = $request->get('date');
         $price = $request->get('price');
         $userId = $request->user()->id;
-        if (ReservationRepository::getRemainingParkingCapacity($date) != 0) {
-            $result = ReservationRepository::reserve($date, $price, $userId);
+        if(ReservationRepository::isReservedByUser($userId, $date)) {
+            $result = false;
+            $message = 'قبلا این روز رو رزرو کردی';
         } else {
-            $dateTimestamp = strtotime($date);
-
-            $now = Carbon::now();
-            $weekEndDate = $now->endOfWeek()->timestamp;
-            if ($dateTimestamp < $weekEndDate) {
-                $result = false;
-                $message = 'این هفته دیگه رزروه';
+            if (ReservationRepository::getRemainingParkingCapacity($date) != 0) {
+                $result = ReservationRepository::reserve($date, $price, $userId);
             } else {
-                $result = ReservationRepository::kickSomeoneOut($date, $price, $userId, $sms);
-                if (!$result) {
-                    $message = 'رزرو نشد قیمت کشید بالا';
+                $dateTimestamp = strtotime($date);
+
+                $now = Carbon::now();
+                $weekEndDate = $now->endOfWeek()->timestamp;
+                if ($dateTimestamp < $weekEndDate) {
+                    $result = false;
+                    $message = 'این هفته دیگه رزروه';
+                } else {
+                    $result = ReservationRepository::kickSomeoneOut($date, $price, $userId, $sms);
+                    if (!$result) {
+                        $message = 'رزرو نشد قیمت کشید بالا';
+                    }
                 }
             }
         }
+
         return response()->base($result, null, $message);
 
 
