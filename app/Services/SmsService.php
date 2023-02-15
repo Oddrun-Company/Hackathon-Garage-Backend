@@ -24,4 +24,9 @@ class SmsService
     {
         $this->send($phone, trans('messages.sms.otp', ['code' => $code]));
     }
+
+    public function bidLastCall(int $phone, string $remaining_time): void
+    {
+        $this->send($phone, trans('messages.sms.bidLastCall', ['remaining_time' => $remaining_time]));
+    }
 }

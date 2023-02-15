@@ -12,7 +12,7 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
+        $schedule->command('bid:last-call')->fridays()->at(env('BID_LAST_CALL_NOTIFICATION_TIME'));
     }
 
     /**
