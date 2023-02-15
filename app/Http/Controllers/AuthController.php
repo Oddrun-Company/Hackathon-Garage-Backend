@@ -18,7 +18,7 @@ class AuthController extends Controller
     public function request(Request $request, SmsService $sms)
     {
         $phone = $request->get('phone');
-        if (!User::where('phone_number')->exists()) {
+        if (!User::where('phone_number', $phone)->exists()) {
             return response()->base(false, null, null);
         }
 
