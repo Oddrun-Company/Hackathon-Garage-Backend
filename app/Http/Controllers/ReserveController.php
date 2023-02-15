@@ -16,16 +16,6 @@ use Illuminate\Validation\ValidationException;
 
 class ReserveController extends Controller
 {
-    private array $trans = [
-        "Saturday" => "شنبه",
-        "Sunday" => "یکشنبه",
-        "Monday" => "دوشنبه",
-        "Tuesday" => "سه شنبه",
-        "Wednesday" => "چهارشنبه",
-        "Thursday" => "پنجشنبه",
-        "Friday" => "جمعه",
-    ];
-
     public function list(Request $request)
     {
         $user = $request->user()->only(['name', 'debt']);
@@ -56,7 +46,7 @@ class ReserveController extends Controller
             $isHoliday = HolidayService::isGregorianDateHoliday($date->format("Y/m/d"));
             $list[] = (new WeekDay(
                 $date->toDateString(),
-                $this->translateDayName($date->dayName),
+                $date->dayName,
                 $isHoliday ? null : (int)env('MINIMUM_RESERVE_PRICE'),
                 $isHoliday ? ReservationStatus::HOLIDAY : ReservationStatus::AVAILABLE
             ));
@@ -114,11 +104,6 @@ class ReserveController extends Controller
     private function getFirstDayOfCurrentWeek(): \Illuminate\Support\Carbon
     {
         return today()->startOfWeek()->subDays(2);
-    }
-
-    private function translateDayName($name): string
-    {
-        return $this->trans[$name];
     }
 
     public function reserve(Request $request, SmsService $sms): JsonResponse

@@ -18,7 +18,7 @@ class ReservationRepository
     {
         return Reservation::where('user_id', '=', $userId)
             ->where('reserve_date', '=', $date)
-            ->exist();
+            ->exists();
     }
 
     public static function kickSomeoneOut($date, $price, $addedUserId,$sms): bool
