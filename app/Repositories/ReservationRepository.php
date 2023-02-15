@@ -51,7 +51,9 @@ class ReservationRepository
             'reserve_date' => $date,
             'price' => $price
         ]);
-
+        $debt = User::where('id', '=', $userId)->first()->debt;
+        $newDept = $debt - $price;
+        User::where('id', $userId)->update(['debt' => $newDept]);
         return $result;
     }
 
