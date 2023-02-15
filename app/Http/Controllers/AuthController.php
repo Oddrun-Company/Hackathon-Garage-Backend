@@ -18,6 +18,9 @@ class AuthController extends Controller
     public function request(Request $request, SmsService $sms)
     {
         $phone = $request->get('phone');
+        if (!User::where('phone_number')->exists()) {
+            return response()->base(false, null, null);
+        }
 
         $code = random_int(1000, 9999);
         Cache::set(self::CODE_CACHE_PREFIX . $phone, $code);
