@@ -21,40 +21,44 @@ class ReservationRepository
             ->exists();
     }
 
-    public static function kickSomeoneOut($date, $price, $addedUserId,$sms): bool
+    public static function kickSomeoneOut($date, $price, $addedUserId, $smsService): bool
     {
-        $reserved = Reservation::query()->where('reserve_date', '=', $date)
-            ->where('deleted_by', '=', null)
+        $firstActiveReserve = Reservation::query()->where('reserve_date', '=', $date)
             ->orderBy('price')
             ->first();
-        if ($price <= $reserved->price) {
+        $randomReserve = Reservation::where('reserve_date', '=', $date)
+            ->wherePrice($firstActiveReserve->price)
+            ->inRandomOrder()
+            ->first();
+        if ($price <= $randomReserve->price || $price < $randomReserve->price + env("MINIMUM_RESERVE_PRICE_STEP")) {
             return false;
         }
-        Reservation::where('user_id', $reserved->user_id)->update(['deleted_by' => $addedUserId]);
+        $randomReserve->deleted_by = $addedUserId;
+        $randomReserve->save();
+        $randomReserve->delete();
+
         self::reserve($date, $price, $addedUserId);
 
-        $rUser = User::where('id', '=', $reserved->user_id)->first();
-        $rDebt = $rUser->debt;
-        $newDebt = $rDebt + $reserved->price;
-        User::where('id', $reserved->user_id)->update(['debt' => $newDebt]);
-        $nDebt = User::where('id', '=', $addedUserId)->first()->debt;
-        $newDept = $nDebt - $price;
-        User::where('id', $addedUserId)->update(['debt' => $newDept]);
-        $sms->send($rUser->phone_number,trans('messages.sms.reservedCancel'));
-        return true;
+        $prevUser = User::where('id', '=', $randomReserve->user_id)->first();
+        $prevUser->debt += $randomReserve->price;
+        $prevUser->save();
 
+        $smsService->send($prevUser->phone_number, trans('messages.sms.reservedCancel'));
+
+        return true;
     }
 
     public static function reserve($date, $price, $userId): bool {
-        $result = Reservation::insert([
+        $result = Reservation::create([
             'user_id' => $userId,
             'reserve_date' => $date,
             'price' => $price
         ]);
-        $debt = User::where('id', '=', $userId)->first()->debt;
-        $newDept = $debt - $price;
-        User::where('id', $userId)->update(['debt' => $newDept]);
-        return $result;
+        $user = User::where('id', '=', $userId)->first();
+        $user->debt -= $price;
+        $user->save();
+
+        return true;
     }
 
 
