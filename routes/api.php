@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ReserveController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -21,3 +22,5 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::get('test', function() {
     $sms = new \Utils\KavenegarApi("", true);
 });
+
+Route::post('reserves', [ReserveController::class, 'insert']);
