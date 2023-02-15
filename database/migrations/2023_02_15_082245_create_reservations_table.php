@@ -18,7 +18,7 @@ return new class extends Migration
             $table->date('reserve_date');
             $table->integer('price');
             $table->softDeletes();
-            $table->timestamps()
+            $table->timestamps();
         });
     }
 
