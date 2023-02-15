@@ -6,8 +6,9 @@ use App\Entities\WeekDay;
 use App\Enums\ReservationStatus;
 use App\Models\Reservation;
 use App\Models\User;
-use App\Services\HolidayService;
 use App\Repositories\ReservationRepository;
+use App\Services\HolidayService;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -26,25 +27,18 @@ class ReserveController extends Controller
 
     public function list(Request $request)
     {
-        // $user = $request->user()->only(['name', 'debt']);
-        $user = User::where('id', '=', 1)
-            ->first()
-            ->only(['name', 'debt']);
-
-        $firstDayOfCurrentWeek = $this->getFirstDayOfCurrentWeek();
-        $firstDayOfNextWeek = $this->getFirstDayOfCurrentWeek()->addDays(7);
-
+        $user = $request->user()->only(['name', 'debt']);
 
         return [
             'active_tab' => $this->getActiveTab(),
             'user' => $user,
-            'current' => $this->createWeekList($firstDayOfCurrentWeek),
-            'next' => []
+
+            'current' => $this->createCurrentWeekList(),
+            'next' => $this->createNextWeekList()
         ];
     }
 
-    private function getActiveTab()
-    {
+    private function getActiveTab () {
         $date = today();
         if ($date->isFriday() || $date->isThursday()) {
             return 'next';
@@ -72,12 +66,45 @@ class ReserveController extends Controller
 
     private function createCurrentWeekList()
     {
+        $currentWeek = $this->createWeekList($this->getFirstDayOfCurrentWeek());
+        /**
+         * @var WeekDay $dayObj
+         */
+        foreach ($currentWeek as $index => $dayObj) {
+            $date = $dayObj->getDate();
+            if(ReservationRepository::isReservedByUser(\request()->user()->id, $date)){
+                $dayObj->setStatus(ReservationStatus::RESERVED_BY_ME);
+            }
+            else if ( Carbon::parse($date)->isPast()){
+                $dayObj->setStatus(ReservationStatus::PASSED);
+            }
+            else if (ReservationRepository::getRemainingParkingCapacity($date) == 0){
+                $dayObj->setStatus(ReservationStatus::RESERVED_NOT_BIDABLE);
+            }
+            $currentWeek[$index] = $dayObj->toArray();
+        }
 
+        return $currentWeek;
     }
 
     private function createNextWeekList()
     {
+        $nextWeek = $this->createWeekList($this->getFirstDayOfCurrentWeek()->addWeek());
+        /**
+         * @var WeekDay $dayObj
+         */
+        foreach ($nextWeek as $index => $dayObj) {
+            $date = $dayObj->getDate();
+            if(ReservationRepository::isReservedByUser(\request()->user()->id, $date)){
+                $dayObj->setStatus(ReservationStatus::RESERVED_BY_ME);
+            }
+            else if (ReservationRepository::getRemainingParkingCapacity($date) == 0){
+                $dayObj->setStatus(ReservationStatus::RESERVED_BUT_BIDABLE);
+            }
+            $nextWeek[$index] = $dayObj->toArray();
+        }
 
+        return $nextWeek;
     }
 
     private function getFirstDayOfCurrentWeek(): \Illuminate\Support\Carbon

@@ -4,8 +4,6 @@ namespace App\Repositories;
 
 use App\Models\Reservation;
 use App\Models\User;
-use Illuminate\Validation\ValidationException;
-use function Psy\debug;
 
 class ReservationRepository
 {
@@ -16,9 +14,13 @@ class ReservationRepository
         return env('LIMIT_PARKING') - $count;
     }
 
-    /**
-     * @throws ValidationException
-     */
+    public static function isReservedByUser(int $userId, string $date)
+    {
+        return Reservation::where('user_id', '=', $userId)
+            ->where('reserve_date', '=', $date)
+            ->exist();
+    }
+
     public static function kickSomeoneOut($date, $price, $addedUserId): bool
     {
         $reserved = Reservation::query()->where('reserve_date', '=', $date)
