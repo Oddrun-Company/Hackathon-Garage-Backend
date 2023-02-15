@@ -21,7 +21,7 @@ class ReservationRepository
             ->exist();
     }
 
-    public static function kickSomeoneOut($date, $price, $addedUserId): bool
+    public static function kickSomeoneOut($date, $price, $addedUserId,$sms): bool
     {
         $reserved = Reservation::query()->where('reserve_date', '=', $date)
             ->where('deleted_by', '=', null)
@@ -33,12 +33,14 @@ class ReservationRepository
         Reservation::where('user_id', $reserved->user_id)->update(['deleted_by' => $addedUserId]);
         self::reserve($date, $price, $addedUserId);
 
-        $rDebt = User::where('id', '=', $reserved->user_id)->first()->debt;
+        $rUser = User::where('id', '=', $reserved->user_id)->first();
+        $rDebt = $rUser->debt;
         $newDebt = $rDebt + $reserved->price;
         User::where('id', $reserved->user_id)->update(['debt' => $newDebt]);
         $nDebt = User::where('id', '=', $addedUserId)->first()->debt;
         $newDept = $nDebt - $price;
         User::where('id', $addedUserId)->update(['debt' => $newDept]);
+        $sms->send($rUser->phone_number,trans('messages.sms.reservedCancel'));
         return true;
 
     }
