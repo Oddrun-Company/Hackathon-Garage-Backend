@@ -101,6 +101,16 @@ class ReserveController extends Controller
 
     private function getFirstDayOfCurrentWeek(): \Illuminate\Support\Carbon
     {
+        $dayOfWeek = now()->dayOfWeek;
+        // Saturday
+        if ($dayOfWeek == 6) {
+            return today();
+        }
+        // Sunday
+        if ($dayOfWeek == 7) {
+            return today()->subDays(1);
+        }
+
         return today()->startOfWeek()->subDays(2);
     }
 
